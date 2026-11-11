@@ -52,7 +52,7 @@ button:focus-visible,input:focus-visible,.tab:focus-visible{outline:3px solid va
 .btn.alt{background:var(--ink);color:var(--bg)}
 .ghost{background:none;border:0;color:var(--mut);font-size:20px;padding:4px 10px}
 .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));z-index:5}
-.tab{flex:1;border:0;background:none;color:var(--mut);font:700 17px "Barlow Condensed",sans-serif;padding:12px 4px;border-radius:10px}
+.tab{flex:1;border:0;background:none;color:var(--mut);font:700 15px "Barlow Condensed",sans-serif;padding:12px 2px;border-radius:10px}
 .tab.on{color:var(--acc);background:var(--field)}
 .timer{position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);border-radius:14px;padding:12px 16px;display:none;align-items:center;justify-content:space-between;z-index:6}
 .timer.on{display:flex}
@@ -76,6 +76,14 @@ details.tt[open] summary{border-bottom:1px solid var(--line)}
 .tt .in{padding:8px 12px 12px;font-size:15px}
 .tt ol{margin:6px 0;padding-left:20px}
 .pic svg{max-width:300px;margin:0 auto 8px}
+select{width:100%;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:10px;padding:10px;font:600 16px Barlow,sans-serif;margin:6px 0 4px}
+select:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.pr{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);padding:10px 4px;font:500 15px Barlow,sans-serif}
+.pr small{color:var(--mut)}
+.pr.rest{color:var(--mut)}
+.pr.today{background:var(--field);border-radius:8px}
+.ok{color:var(--ok);font-weight:700}
+.stats.sm b{font-size:19px}
 .tt .er{color:var(--mut);margin:6px 0 0}
 .tt .lk{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .tt .lk a{flex:1 1 140px;text-align:center;text-decoration:none;border-radius:10px;padding:10px;font-weight:600;background:var(--ink);color:var(--bg)}
@@ -92,6 +100,7 @@ li{margin:4px 0}
 <button class="tab" data-tab="s">Séance</button>
 <button class="tab" data-tab="w">Poids</button>
 <button class="tab" data-tab="m">Mesures</button>
+<button class="tab" data-tab="h">Historique</button>
 <button class="tab" data-tab="p">Programme</button>
 </nav>
 <script>
@@ -108,9 +117,9 @@ C:[['presse2','Presse à cuisses','3 × 10–12','Même réglage que la séance 
 };
 EX.D=EXTRA.D;EX.E=EXTRA.E;
 function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
-var S={w:[{d:today(),v:START}],s:[],dr:{},m:[],sw:{},tab:'s',day:null};
-try{var r=localStorage.getItem(K);if(r){var o=JSON.parse(r);S.w=o.w||S.w;S.s=o.s||[];S.dr=o.dr||{};S.m=o.m||[];S.sw=o.sw||{}}}catch(e){}
-function snap(){return JSON.stringify({w:S.w,s:S.s,dr:S.dr,m:S.m,sw:S.sw})}
+var S={w:[{d:today(),v:START}],s:[],dr:{},m:[],sw:{},p:null,tab:'s',day:null};
+try{var r=localStorage.getItem(K);if(r){var o=JSON.parse(r);S.w=o.w||S.w;S.s=o.s||[];S.dr=o.dr||{};S.m=o.m||[];S.sw=o.sw||{};S.p=o.p||null}}catch(e){}
+function snap(){return JSON.stringify({w:S.w,s:S.s,dr:S.dr,m:S.m,sw:S.sw,p:S.p})}
 function save(){try{localStorage.setItem(K,snap())}catch(e){}autoPush()}
 var GK='suivi-basic-fit-gh',GH={repo:'',path:'sauvegardes/suivi-basic-fit.json',tok:'',auto:false,last:''},ghT=null,ghMsg='',ghSkip=false;
 try{var g0=localStorage.getItem(GK);if(g0)GH=Object.assign(GH,JSON.parse(g0))}catch(e){}
@@ -134,7 +143,7 @@ async function ghPull(){
  if(!r.ok)throw new Error(ghErr(r));
  var j=await r.json(),o=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,'')))));
  if(!Array.isArray(o.w)||!Array.isArray(o.s))throw new Error('fichier de sauvegarde invalide.');
- S.w=o.w;S.s=o.s;S.dr=o.dr||{};S.m=o.m||[];S.sw=o.sw||{};S.day=null;save();
+ S.w=o.w;S.s=o.s;S.dr=o.dr||{};S.m=o.m||[];S.sw=o.sw||{};S.p=o.p||null;S.day=null;save();
 }
 function paintGh(){var e=document.getElementById('ghs');if(e)e.textContent=ghMsg}
 function autoPush(){if(!GH.auto||ghSkip||!ghOk())return;clearTimeout(ghT);ghT=setTimeout(function(){ghPush().then(function(){ghMsg='Synchronisé le '+GH.last;paintGh()}).catch(function(e){ghMsg='Échec de la synchronisation : '+e.message;paintGh()})},15000)}
@@ -142,7 +151,7 @@ function fmt(n){return String(Math.round(n*10)/10).replace('.',',')}
 function num(v){var n=parseFloat(String(v).replace(',','.'));return isNaN(n)?null:n}
 function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function cur(){return S.w.length?S.w[S.w.length-1].v:START}
-function nextDay(){return ['A','B','C'][S.s.filter(function(x){return 'ABC'.indexOf(x.day)>=0}).length%3]}
+function nextDay(){if(S.p){var t0=today(),pe=S.p.days.find(function(x){return x[0]===t0&&x[1]==='s'});if(pe)return pe[2]}return ['A','B','C'][S.s.filter(function(x){return 'ABC'.indexOf(x.day)>=0}).length%3]}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(function(){e.style.display='none'},2200)}
 
 var OPEN={};
@@ -277,6 +286,76 @@ function vPoids(){
  return h;
 }
 
+var PF={start:today(),per:3},PLEDIT=false,HSEL=null,DEMO=false;
+var WK=[['Semaine 1 · Adaptation','Charges légères pour apprendre les mouvements. Gardez 3 répétitions en réserve.',30],['Semaine 2 · Montée en charge','Ajoutez le plus petit cran sur les exercices où toutes les séries sont réussies.',35],['Semaine 3 · Progression','Même principe : visez le haut de la fourchette de répétitions.',40],['Semaine 4 · Allègement et bilan','Baissez les charges d’environ 10 % pour récupérer. Pesée et mensurations en fin de semaine.',30]];
+var DN=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'],SEQ={3:['A','B','C'],4:['A','B','D','E'],5:['A','B','C','D','E']},POS={3:[0,2,4],4:[0,1,3,4],5:[0,1,3,4,5]},WALK={3:[1,3],4:[2,5],5:[2]};
+function addDays(d,n){var x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')}
+function fdate(d){var x=new Date(d+'T12:00:00');return DN[x.getDay()]+' '+x.getDate()+'/'+String(x.getMonth()+1).padStart(2,'0')}
+function sdate(d){return new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}
+function genPlan(start,per){var days=[];for(var w=0;w<4;w++)for(var o=0;o<7;o++){var d=addDays(start,w*7+o),i=POS[per].indexOf(o);days.push(i>=0?[d,'s',SEQ[per][i]]:WALK[per].indexOf(o)>=0?[d,'m',WK[w][2]]:[d,'r','']);}return {start:start,per:per,days:days}}
+function doneMap(){var m={};if(!S.p)return m;for(var w=0;w<4;w++){var a=S.p.days[w*7][0],b=S.p.days[w*7+6][0],pool=S.s.filter(function(x){return x.date>=a&&x.date<=b});for(var i=w*7;i<w*7+7;i++){var e=S.p.days[i];if(e[1]!=='s')continue;var j=pool.findIndex(function(x){return x.day===e[2]});if(j>=0){m[i]=1;pool.splice(j,1)}}}return m}
+function vPlan(){
+ var p=S.p,h='<section class="card"><h3>Mon programme du mois</h3>';
+ if(!p||PLEDIT){
+  h+='<p class="sub">4 semaines prêtes à suivre : séances, marches et repos placés pour vous, avec une progression semaine après semaine.</p><div class="fld" style="grid-template-columns:1fr"><div><label for="pl_start">Date de départ</label><input id="pl_start" type="date" value="'+PF.start+'"></div></div><p class="sub" style="font-size:14px;margin:8px 0 4px">Séances par semaine</p><div class="chips" style="margin-top:4px">'+[3,4,5].map(function(n){return '<button class="chip'+(n===PF.per?' on':'')+'" data-per="'+n+'">'+n+' séances<small>'+(n===3?'A, B, C':n===4?'A, B, D, E':'A à E')+'</small></button>'}).join('')+'</div><button class="btn" id="plgen" style="margin-top:10px">Créer le programme</button>'+(p?'<button class="btn alt" id="plcancel" style="margin-top:8px">Annuler</button>':'')+'</section>';
+  return h;
+ }
+ var dm=doneMap(),tot=0,dn=0,t0=today();
+ p.days.forEach(function(e,i){if(e[1]==='s'){tot++;if(dm[i])dn++}});
+ h+='<p class="sub">Du '+sdate(p.days[0][0])+' au '+sdate(p.days[27][0])+' · '+p.per+' séances par semaine</p><div class="bar"><i style="width:'+Math.round(dn/tot*100)+'%"></i></div><p class="sub" style="font-size:14px">'+dn+' séance'+(dn>1?'s':'')+' faite'+(dn>1?'s':'')+' sur '+tot+'</p></section>';
+ for(var w=0;w<4;w++){
+  h+='<section class="card"><h3>'+WK[w][0]+'</h3><p class="sub" style="font-size:14px;margin:2px 0 6px">'+WK[w][1]+'</p>';
+  p.days.slice(w*7,w*7+7).forEach(function(e,k){
+   var i=w*7+k,cls='pr'+(e[0]===t0?' today':''),lab=fdate(e[0]);
+   if(e[1]==='s'){h+='<button class="'+cls+'" data-go="'+e[2]+'"><span><b>'+lab+'</b> · '+TITLES[e[2]][0]+' <small>'+TITLES[e[2]][1]+'</small></span>'+(dm[i]?'<span class="ok">✓</span>':'<span class="sub">›</span>')+'</button>'}
+   else if(e[1]==='m'){h+='<div class="'+cls+'"><span><b>'+lab+'</b> · Marche rapide <small>'+e[2]+' min</small></span></div>'}
+   else{h+='<div class="'+cls+' rest"><span><b>'+lab+'</b> · Repos</span></div>'}
+  });
+  h+='</section>';
+ }
+ return h+'<button class="btn alt" id="plnew">Refaire le programme</button><div style="height:12px"></div>';
+}
+function nameOf(id){var p=id.split('~'),o=p[0];if(p[1])return (ALT[o]||[])[+p[1]-1]||o;for(var k in EX){for(var i=0;i<EX[k].length;i++)if(EX[k][i][0]===o)return EX[k][i][1]}return o}
+function isT(n){return n==='Gainage planche'||PL.indexOf(n)>=0}
+function demoS(){
+ var base={presse:60,ext:30,pec:25,ep:15,curl:25,tir:35,row:30,hip:40,bic:8,presse2:60,fly:20,tir2:30,tri:15},out=[],t=today();
+ for(var i=0;i<15;i++){var day=['A','B','C'][i%3],wk=Math.floor(i/3),ex={};
+  EX[day].forEach(function(e){var id=e[0],rows=[];for(var k=0;k<3;k++){if(e[4])rows.push(['',String(20+i*2+k),1]);else{var b=base[id]||20,st=b<20?1:2.5;rows.push([String(b+st*wk),String(12-k),1])}}ex[id]=rows});
+  out.push({date:addDays(t,-(34-wk*7-[0,2,4][i%3])),day:day,ex:ex,c:'20'})}
+ return out}
+function hdata(){
+ var H={};(DEMO?demoS():S.s).forEach(function(s){Object.keys(s.ex).forEach(function(id){
+  var nm=nameOf(id),sets=[];
+  s.ex[id].forEach(function(r){if(r[2]){var kg=num(r[0])||0,rp=num(r[1])||0;if(rp>0||kg>0)sets.push({kg:kg,rp:rp})}});
+  if(sets.length)(H[nm]=H[nm]||[]).push({d:s.date,day:s.day,sets:sets})})});
+ Object.keys(H).forEach(function(k){H[k].sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0})});
+ return H}
+function lchart(pts){
+ if(pts.length<2)return '<p class="sub">Il faut au moins deux séances pour tracer la courbe.</p>';
+ var W=320,H=150,pl=34,pr=10,pt=16,pb=22,vs=pts.map(function(p){return p.v}),lo=Math.min.apply(null,vs),hi=Math.max.apply(null,vs);
+ if(hi===lo){hi+=1;lo-=1}
+ var X=function(i){return pl+i/(pts.length-1)*(W-pl-pr)},Y=function(v){return pt+(hi-v)/(hi-lo)*(H-pt-pb)},tx=' font-size="10" fill="var(--mut)" font-family="Barlow,sans-serif"';
+ var g='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Évolution par séance">';
+ [lo,(lo+hi)/2,hi].forEach(function(v){g+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--line)"/><text x="2" y="'+(Y(v)+3)+'"'+tx+'>'+fmt(v)+'</text>'});
+ g+='<polyline fill="none" stroke="var(--acc)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" points="'+pts.map(function(p,i){return X(i).toFixed(1)+','+Y(p.v).toFixed(1)}).join(' ')+'"/>';
+ pts.forEach(function(p,i){g+='<circle cx="'+X(i)+'" cy="'+Y(p.v)+'" r="3.5" fill="var(--acc)"/>'});
+ return g+'<text x="'+pl+'" y="'+(H-6)+'"'+tx+'>'+sdate(pts[0].d)+'</text><text x="'+(W-pr)+'" y="'+(H-6)+'" text-anchor="end"'+tx+'>'+sdate(pts[pts.length-1].d)+'</text></svg>';
+}
+function vHist(){
+ var H=hdata(),names=Object.keys(H).sort(function(a,b){return H[b].length-H[a].length||a.localeCompare(b)}),h='<h1>Historique</h1><p class="sub">Charges et répétitions, exercice par exercice</p>';
+ if(DEMO)h+='<section class="card" style="border-color:var(--acc)"><b>Exemple</b><p class="sub" style="margin:2px 0 8px">Données fictives pour montrer le rendu. Vos vraies données ne sont pas modifiées.</p><button class="btn alt" id="demoOff">Quitter l’exemple</button></section>';
+ if(!names.length)return h+'<section class="card"><p class="sub">Aucune série validée pour l’instant. Terminez une séance et vos charges et répétitions apparaîtront ici.</p><button class="btn alt" id="demo" style="margin-top:10px">Voir un exemple</button></section>';
+ var ns=(DEMO?demoS():S.s).length,sets=0,reps=0,vol=0;
+ names.forEach(function(n){H[n].forEach(function(e){e.sets.forEach(function(s){sets++;if(!isT(n)){reps+=s.rp;vol+=s.kg*s.rp}})})});
+ h+='<section class="card"><div class="stats" style="grid-template-columns:repeat(4,1fr)"><div><b>'+ns+'</b><span>séances</span></div><div><b>'+sets+'</b><span>séries</span></div><div><b>'+reps+'</b><span>répétitions</span></div><div><b>'+(Math.round(vol/100)/10).toLocaleString('fr-FR')+'</b><span>tonnes soulevées</span></div></div></section>';
+ var sel=H[HSEL]?HSEL:names[0],E=H[sel],T=isT(sel),best=null,rt=0,vv=0,pts=[];
+ E.forEach(function(e){var mx=0;e.sets.forEach(function(s){rt+=s.rp;vv+=s.kg*s.rp;if(!best||s.kg>best.kg||(s.kg===best.kg&&s.rp>best.rp))best=s;mx=Math.max(mx,T?s.rp:(s.kg||s.rp))});pts.push({d:e.d,v:mx})});
+ h+='<section class="card"><label class="sub" for="hsel">Exercice</label><select id="hsel">'+names.map(function(n){return '<option value="'+esc(n)+'"'+(n===sel?' selected':'')+'>'+esc(n)+' ('+H[n].length+')</option>'}).join('')+'</select>';
+ h+='<div class="stats sm"><div><b>'+(T?best.rp+' s':fmt(best.kg)+' kg × '+best.rp)+'</b><span>meilleure série</span></div><div><b>'+E.length+'</b><span>séance'+(E.length>1?'s':'')+'</span></div><div><b>'+(T?rt+' s':Math.round(vv).toLocaleString('fr-FR')+' kg')+'</b><span>'+(T?'temps total':'volume total')+'</span></div></div></section>';
+ h+='<section class="card"><h3>Progression</h3><p class="sub" style="font-size:14px;margin:2px 0 6px">'+(T?'Meilleure durée par séance (s)':'Charge maximale par séance (kg)')+'</p>'+lchart(pts)+'</section>';
+ h+='<section class="card"><h3>Séances</h3>'+E.slice().reverse().slice(0,15).map(function(e){return '<div class="hist" style="align-items:flex-start"><span><b>'+sdate(e.d)+'</b><br><span class="sub" style="font-size:13px">'+TITLES[e.day][0]+'</span></span><span style="text-align:right">'+e.sets.map(function(s){return T?s.rp+' s':(s.kg?fmt(s.kg)+' kg × ':'')+s.rp}).join('<br>')+'</span></div>'}).join('')+'</section>';
+ return h;
+}
 function vMes(){
  var m=S.m,l=m[m.length-1],h='<h1>Mensurations</h1><p class="sub">La balance ne dit pas tout : le tour de taille baisse souvent avant le poids.</p>';
  h+='<section class="card"><h3>Nouvelles mesures (cm)</h3><div class="fld">'+MF.map(function(x){return '<div><label for="m_'+x[0]+'">'+x[1]+'</label><input id="m_'+x[0]+'" inputmode="decimal" placeholder="'+(l&&l[x[0]]?fmt(l[x[0]]):'cm')+'"></div>'}).join('')+'</div><button class="btn" id="madd">Enregistrer</button><p class="sub" style="font-size:14px">Mesurez toujours au même endroit, une fois par mois, avec un mètre ruban souple.</p></section>';
@@ -301,7 +380,7 @@ function vBackup(){
  return '<section class="card"><h3>Sauvegarde</h3><p class="sub">Vos données restent sur ce téléphone. Envoyez-vous la sauvegarde (WhatsApp, e-mail, notes) pour ne rien perdre ou pour changer de téléphone.</p><div class="row" style="margin:10px 0"><button class="btn alt" id="bcopy">Copier</button>'+(navigator.share?'<button class="btn" id="bshare">Envoyer</button>':'')+'</div><textarea id="bdata" aria-label="Texte de sauvegarde" placeholder="Collez ici une sauvegarde à restaurer"></textarea><button class="btn alt" id="brest">Restaurer depuis ce texte</button><p class="sub" style="font-size:14px">La restauration remplace les données actuelles.</p></section>'+vGh();
 }
 function vProg(){
- return '<h1>Programme</h1><p class="sub">Débutant, 3 séances par semaine à Basic-Fit</p>'+
+ return '<h1>Programme</h1><p class="sub">Débutant, 3 séances par semaine à Basic-Fit</p>'+vPlan()+
  '<section class="card"><h3>Semaine type</h3><ul><li><b>Lundi</b> : séance A</li><li><b>Mardi</b> : marche rapide 30 à 45 min</li><li><b>Mercredi</b> : séance B</li><li><b>Jeudi</b> : marche rapide ou repos</li><li><b>Vendredi</b> : séance C</li><li><b>Week-end</b> : activité douce (marche, vélo) et repos</li><li><b>Séances D et E</b> : facultatives, à faire à la place d’une marche quand vous êtes en forme</li></ul></section>'+
  '<section class="card"><h3>Progression</h3><ul><li>Choisissez une charge qui laisse 2 répétitions « en réserve » sur la dernière série.</li><li>Quand vous atteignez le haut de la fourchette sur toutes les séries, ajoutez le plus petit incrément de la machine à la séance suivante.</li><li>Les 3 premières semaines : apprenez les mouvements avec des charges légères.</li><li>Repos entre les séries : 60 à 90 secondes.</li></ul></section>'+
  '<section class="card"><h3>Pour tenir sur la durée</h3><ul><li>Machines guidées d’abord : elles ménagent le dos et les genoux.</li><li>Échauffement : 5 à 8 minutes de vélo ou de marche.</li><li>Dormez 7 à 8 heures et buvez de l’eau pendant la séance.</li><li>La perte de poids se joue surtout à l’assiette : un déficit modéré et régulier, sans régime extrême.</li><li>Avant de démarrer, un avis médical est conseillé, surtout à ce poids de départ.</li></ul></section>'+vBackup();
@@ -309,7 +388,7 @@ function vProg(){
 
 function render(){
  var a=document.getElementById('app');
- a.innerHTML=S.tab==='s'?vSeance():S.tab==='w'?vPoids():S.tab==='m'?vMes():vProg();
+ a.innerHTML=S.tab==='s'?vSeance():S.tab==='w'?vPoids():S.tab==='m'?vMes():S.tab==='h'?vHist():vProg();
  document.querySelectorAll('.tab').forEach(function(t){var on=t.dataset.tab===S.tab;t.classList.toggle('on',on);if(on)t.setAttribute('aria-current','page');else t.removeAttribute('aria-current')});
 }
 
@@ -320,9 +399,16 @@ function stopT(){clearInterval(tm);document.getElementById('timer').classList.re
 document.getElementById('tx').onclick=stopT;
 
 document.addEventListener('click',function(e){
- var t=e.target.closest('[data-tab],[data-day],[data-chk],[data-del],[data-sw],[data-mdel],#fin,#wadd,#madd,#bcopy,#bshare,#brest,#ghsave,#ghpush,#ghpull');if(!t)return;
- if(t.dataset.tab){S.tab=t.dataset.tab;render();window.scrollTo(0,0);return}
+ var t=e.target.closest('[data-tab],[data-day],[data-chk],[data-del],[data-sw],[data-mdel],#fin,#wadd,#madd,#bcopy,#bshare,#brest,#ghsave,#ghpush,#ghpull,[data-go],[data-per],#plgen,#plnew,#plcancel,#demo,#demoOff');if(!t)return;
+ if(t.dataset.tab){DEMO=false;S.tab=t.dataset.tab;render();window.scrollTo(0,0);return}
  if(t.dataset.day){S.day=t.dataset.day;render();return}
+ if(t.dataset.go){S.tab='s';S.day=t.dataset.go;render();window.scrollTo(0,0);return}
+ if(t.dataset.per){var d2=document.getElementById('pl_start');if(d2&&d2.value)PF.start=d2.value;PF.per=+t.dataset.per;render();return}
+ if(t.id==='plgen'){var ds=document.getElementById('pl_start').value;if(!ds){toast('Choisissez une date de départ');return}PF.start=ds;S.p=genPlan(ds,PF.per);PLEDIT=false;save();render();toast('Programme créé');return}
+ if(t.id==='plnew'){PLEDIT=true;render();return}
+ if(t.id==='plcancel'){PLEDIT=false;render();return}
+ if(t.id==='demo'){DEMO=true;render();return}
+ if(t.id==='demoOff'){DEMO=false;render();return}
  if(t.id==='ghsave'){GH.repo=document.getElementById('gh_repo').value.trim();GH.path=document.getElementById('gh_path').value.trim()||GH.path;GH.tok=document.getElementById('gh_tok').value.trim();GH.auto=document.getElementById('gh_auto').checked;ghSave();toast('Réglages enregistrés');return}
  if(t.id==='ghpush'||t.id==='ghpull'){var pull=t.id==='ghpull';ghMsg='En cours…';paintGh();(pull?(ghSkip=true,ghPull()):ghPush()).then(function(){ghSkip=false;ghMsg=pull?'Données récupérées depuis GitHub.':'Envoyé le '+GH.last;if(pull)render();else paintGh();toast(pull?'Données récupérées':'Sauvegarde envoyée')}).catch(function(e){ghSkip=false;ghMsg='Échec : '+e.message;paintGh()});return}
  if(t.dataset.sw){var o2=t.dataset.sw,m2=(ALT[o2]||[]).length+1;S.sw[o2]=((S.sw[o2]||0)+1)%m2;save();render();return}
@@ -330,7 +416,7 @@ document.addEventListener('click',function(e){
  if(t.id==='madd'){var en={d:today()},any=false;MF.forEach(function(f){var v=num(document.getElementById('m_'+f[0]).value);if(v&&v>5&&v<300){en[f[0]]=v;any=true}});if(!any){toast('Entrez au moins une mesure');return}var j=S.m.findIndex(function(x){return x.d===en.d});if(j>=0){S.m[j]=Object.assign(S.m[j],en)}else{S.m.push(en)}save();render();toast('Mesures enregistrées');return}
  if(t.id==='bcopy'){var ta=document.getElementById('bdata');ta.value=snap();ta.select();try{document.execCommand('copy')}catch(x){}try{if(navigator.clipboard)navigator.clipboard.writeText(ta.value)}catch(x){}toast('Sauvegarde copiée');return}
  if(t.id==='bshare'){if(navigator.share){navigator.share({title:'Sauvegarde suivi Basic-Fit',text:snap()}).catch(function(){})}else{toast('Partage indisponible : utilisez Copier')}return}
- if(t.id==='brest'){try{var o3=JSON.parse(document.getElementById('bdata').value);if(!Array.isArray(o3.w)||!Array.isArray(o3.s))throw 0;S.w=o3.w;S.s=o3.s;S.dr=o3.dr||{};S.m=o3.m||[];S.sw=o3.sw||{};S.day=null;save();render();toast('Données restaurées')}catch(x){toast('Texte de sauvegarde invalide')}return}
+ if(t.id==='brest'){try{var o3=JSON.parse(document.getElementById('bdata').value);if(!Array.isArray(o3.w)||!Array.isArray(o3.s))throw 0;S.w=o3.w;S.s=o3.s;S.dr=o3.dr||{};S.m=o3.m||[];S.sw=o3.sw||{};S.p=o3.p||null;S.day=null;save();render();toast('Données restaurées')}catch(x){toast('Texte de sauvegarde invalide')}return}
  if(t.dataset.chk){var p=t.dataset.chk.split('|'),row=S.dr[S.day].ex[p[0]][+p[1]];row[2]=row[2]?0:1;save();render();if(row[2])startT();return}
  if(t.dataset.del){S.w.splice(+t.dataset.del,1);save();render();return}
  if(t.id==='wadd'){var v=num(document.getElementById('wv').value);if(!v||v<30||v>400){toast('Entrez un poids valide');return}
@@ -339,6 +425,7 @@ document.addEventListener('click',function(e){
   if(!n){toast('Validez au moins une série');return}
   S.s.push({date:today(),day:S.day,ex:dr.ex,c:dr.c});delete S.dr[S.day];S.day=null;save();stopT();render();toast('Séance enregistrée');window.scrollTo(0,0)}
 });
+document.addEventListener('change',function(e){if(e.target.id==='hsel'){HSEL=e.target.value;render()}});
 document.addEventListener('toggle',function(e){var d=e.target;if(d&&d.dataset&&d.dataset.o)OPEN[d.dataset.o]=d.open},true);
 document.addEventListener('input',function(e){
  var k=e.target.dataset;if(k.k){var p=k.k.split('|');S.dr[S.day].ex[p[0]][+p[1]][+p[2]]=e.target.value;save()}
