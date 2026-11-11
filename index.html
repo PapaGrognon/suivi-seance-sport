@@ -68,6 +68,17 @@ ul{padding-left:20px;margin:8px 0}
 .fld label{font-size:13px;color:var(--mut)}
 textarea{width:100%;min-height:90px;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:10px;padding:10px;font:500 13px/1.3 ui-monospace,monospace;margin:8px 0}
 textarea:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+details.tt{margin:0 0 10px;border:1px solid var(--line);border-radius:10px;background:var(--field)}
+details.tt summary{cursor:pointer;padding:10px 12px;font-weight:600;color:var(--acc);list-style:none}
+details.tt summary::-webkit-details-marker{display:none}
+details.tt summary:focus-visible{outline:3px solid var(--acc);outline-offset:2px;border-radius:10px}
+details.tt[open] summary{border-bottom:1px solid var(--line)}
+.tt .in{padding:8px 12px 12px;font-size:15px}
+.tt ol{margin:6px 0;padding-left:20px}
+.tt .er{color:var(--mut);margin:6px 0 0}
+.tt .lk{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.tt .lk a{flex:1 1 140px;text-align:center;text-decoration:none;border-radius:10px;padding:10px;font-weight:600;background:var(--ink);color:var(--bg)}
+.tt .lk a:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 li{margin:4px 0}
 @media (prefers-reduced-motion:no-preference){.bar i{transition:width .5s}}
 </style>
@@ -107,6 +118,40 @@ function cur(){return S.w.length?S.w[S.w.length-1].v:START}
 function nextDay(){return ['A','B','C'][S.s.filter(function(x){return 'ABC'.indexOf(x.day)>=0}).length%3]}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(function(){e.style.display='none'},2200)}
 
+var OPEN={};
+var TUTO={
+presse:[['Réglez le siège pour que vos genoux soient à environ 90° en bas du mouvement.','Pieds à largeur d’épaules sur la plateforme, dos et fessiers bien plaqués.','Descendez lentement, puis poussez avec les talons sans verrouiller les genoux en haut.'],'décoller le bassin du siège ou rentrer les genoux vers l’intérieur.'],
+ext:[['Réglez le dossier pour que vos genoux soient alignés avec l’axe de la machine.','Coussin sur le bas des tibias, mains sur les poignées.','Tendez les jambes en expirant, marquez 1 seconde en haut, redescendez en 3 secondes.'],'donner un coup d’élan ou verrouiller brutalement les genoux.'],
+pec:[['Réglez le siège : les poignées à hauteur du milieu de la poitrine.','Dos plaqué, omoplates serrées vers l’arrière, pieds bien posés.','Poussez devant vous en expirant, revenez lentement sans que les charges se touchent.'],'décoller le dos ou monter les épaules vers les oreilles.'],
+ep:[['Réglez le siège : poignées à hauteur d’épaules.','Dos calé contre le dossier, abdominaux serrés.','Poussez vers le haut en expirant, redescendez de façon contrôlée.'],'cambrer le dos pour aider la poussée.'],
+pl:[['Avant-bras au sol, coudes sous les épaules, jambes tendues.','Corps aligné de la tête aux talons, fessiers et abdominaux serrés.','Tenez la position en respirant normalement, puis notez la durée.'],'laisser le bassin descendre ou monter en pointe.'],
+curl:[['Réglez le siège : l’axe de la machine face à vos genoux.','Dos bien calé, coussin au-dessus des chevilles, poignées tenues.','Ramenez les talons vers vous en expirant, relâchez lentement.'],'soulever les fesses du siège.'],
+tir:[['Bloquez vos cuisses sous le coussin.','Prise un peu plus large que les épaules, buste légèrement incliné en arrière.','Tirez la barre vers le haut de la poitrine en serrant les omoplates, remontez lentement.'],'tirer avec les bras seuls ou balancer le buste.'],
+row:[['Asseyez-vous poitrine contre le support, pieds calés.','Saisissez les poignées, bras tendus, dos droit.','Tirez les coudes vers l’arrière en serrant les omoplates, revenez lentement.'],'arrondir le dos ou hausser les épaules.'],
+hip:[['Appuyez le haut du dos contre le banc, pieds à plat, genoux fléchis.','Posez une charge sur les hanches si vous êtes à l’aise.','Poussez avec les talons jusqu’à aligner épaules, hanches et genoux, serrez les fessiers une seconde.'],'cambrer le bas du dos en haut du mouvement.'],
+bic:[['Debout ou assis, un haltère dans chaque main, paumes vers l’avant.','Coudes collés au corps.','Montez les haltères en expirant, descendez lentement sur 3 secondes.'],'balancer le buste pour monter la charge.'],
+fly:[['Réglez le siège : poignées à hauteur de la poitrine.','Dos plaqué, coudes légèrement fléchis.','Rapprochez les bras devant vous en expirant, revenez avec une amplitude contrôlée.'],'étirer trop loin derrière, au risque de solliciter l’épaule.'],
+tir2:[['Poitrine contre le support, pieds calés.','Saisissez les poignées, buste droit.','Tirez les coudes vers l’arrière en serrant les omoplates, revenez lentement.'],'tirer avec le dos arrondi.'],
+tri:[['Debout face à la poulie haute, coudes collés au corps.','Poignée ou corde en main, avant-bras à l’horizontale.','Tendez les bras vers le bas en expirant, remontez sans décoller les coudes.'],'avancer les épaules ou balancer le corps.'],
+inc:[['Réglez le banc ou le siège pour une inclinaison d’environ 30°.','Dos plaqué, omoplates serrées.','Poussez vers le haut en expirant, redescendez lentement jusqu’au niveau de la poitrine.'],'cambrer le dos ou décoller les fessiers.'],
+tirn:[['Prise neutre (paumes face à face), cuisses bloquées.','Buste légèrement incliné en arrière.','Tirez vers le haut de la poitrine en serrant les omoplates, remontez lentement.'],'balancer le buste.'],
+lat:[['Debout, un haltère léger dans chaque main, bras le long du corps.','Coudes légèrement fléchis.','Levez les bras sur les côtés jusqu’à hauteur d’épaules, redescendez en 3 secondes.'],'prendre trop lourd et lancer la charge avec le dos.'],
+face:[['Poulie à hauteur du visage, corde en main.','Reculez de quelques pas, bras tendus.','Tirez la corde vers le visage en écartant les coudes en hauteur, serrez les omoplates.'],'tirer avec les poignets ou se pencher en arrière.'],
+smith:[['Placez la barre sur le haut du dos, pieds un peu devant la barre.','Dos droit, abdominaux serrés.','Descendez en poussant les hanches en arrière jusqu’à environ 90° aux genoux, remontez en poussant sur les talons.'],'laisser les genoux rentrer vers l’intérieur.'],
+rdl:[['Debout, un haltère dans chaque main devant les cuisses, genoux légèrement fléchis.','Dos droit, regard devant.','Poussez les hanches en arrière, descendez les haltères le long des jambes, remontez en serrant les fessiers.'],'arrondir le dos.'],
+abd:[['Asseyez-vous dos calé, coussins à l’extérieur des genoux.','Pieds sur les repose-pieds.','Écartez les jambes en expirant, revenez lentement.'],'prendre un élan avec le buste.'],
+mol:[['Épaules sous les coussins, pointes de pieds sur la plateforme.','Jambes presque tendues.','Montez sur la pointe des pieds au maximum, marquez une seconde, redescendez lentement.'],'rebondir sans amplitude.'],
+crunch:[['À genoux face à la poulie haute, corde tenue près de la tête.','Hanches fixes.','Enroulez le buste vers les genoux en expirant, remontez lentement.'],'tirer avec les bras au lieu des abdominaux.']
+};
+TUTO.presse2=TUTO.presse;TUTO.pl2=TUTO.pl;TUTO.tri2=TUTO.tri;
+function tuto(oid,nm,n){
+ var T=n?null:TUTO[oid],k=oid+'~'+n;
+ var q=encodeURIComponent(nm+' technique musculation'),g=encodeURIComponent(nm+' exercice musculation');
+ var h='<details class="tt" data-o="'+k+'"'+(OPEN[k]?' open':'')+'><summary>Comment faire ?</summary><div class="in">';
+ if(T)h+='<ol>'+T[0].map(function(s){return '<li>'+s+'</li>'}).join('')+'</ol><p class="er"><b>À éviter :</b> '+T[1]+'</p>';
+ else h+='<p class="er">Mêmes principes que l’exercice d’origine : charge maîtrisée, mouvement lent, respiration régulière.</p>';
+ return h+'<div class="lk"><a href="https://www.youtube.com/results?search_query='+q+'" target="_blank" rel="noopener">Voir des vidéos</a><a href="https://www.google.com/search?tbm=isch&amp;q='+g+'" target="_blank" rel="noopener">Voir des images</a></div></div></details>';
+}
 function vSeance(){
  var d=S.day||(S.day=nextDay()),ex=EX[d],dr=S.dr[d]=S.dr[d]||{ex:{},c:''};
  var last=null;for(var i=S.s.length-1;i>=0;i--){if(S.s[i].day===d){last=S.s[i];break}}
@@ -116,7 +161,7 @@ function vSeance(){
  ex.forEach(function(e){
   var oid=e[0],n=S.sw[oid]||0,al=ALT[oid]||[],id=n?oid+'~'+n:oid,t=e[4],nm=n?al[n-1]:e[1],tp=n?'Alternative à « '+e[1]+' ».':e[3],rows=dr.ex[id]=dr.ex[id]||[['','',0],['','',0],['','',0]];
   var lv=last&&last.ex[id]||[];
-  h+='<section class="card exo"><h3>'+nm+'</h3><p>'+e[2]+' · '+tp+'</p>'+(al.length?'<button class="swap" data-sw="'+oid+'">Remplacer l’exercice ↻</button>':'')+'<div class="cols"><span></span><span>'+(t?'—':'kg')+'</span><span>'+(t?'secondes':'reps')+'</span><span></span></div>';
+  h+='<section class="card exo"><h3>'+nm+'</h3><p>'+e[2]+' · '+tp+'</p>'+(al.length?'<button class="swap" data-sw="'+oid+'">Remplacer l’exercice ↻</button>':'')+tuto(oid,nm,n)+'<div class="cols"><span></span><span>'+(t?'—':'kg')+'</span><span>'+(t?'secondes':'reps')+'</span><span></span></div>';
   rows.forEach(function(s,i){
    var l=lv[i]||[];
    h+='<div class="set"><span>'+(i+1)+'</span><input inputmode="decimal" '+(t?'disabled':'')+' data-k="'+id+'|'+i+'|0" value="'+esc(s[0])+'" placeholder="'+esc(l[0]||'')+'" aria-label="Poids série '+(i+1)+'"><input inputmode="decimal" data-k="'+id+'|'+i+'|1" value="'+esc(s[1])+'" placeholder="'+esc(l[1]||'')+'" aria-label="Répétitions série '+(i+1)+'"><button class="chk'+(s[2]?' on':'')+'" data-chk="'+id+'|'+i+'" aria-label="Valider la série '+(i+1)+'">'+(s[2]?'✓':'')+'</button></div>';
@@ -206,6 +251,7 @@ document.addEventListener('click',function(e){
   if(!n){toast('Validez au moins une série');return}
   S.s.push({date:today(),day:S.day,ex:dr.ex,c:dr.c});delete S.dr[S.day];S.day=null;save();stopT();render();toast('Séance enregistrée');window.scrollTo(0,0)}
 });
+document.addEventListener('toggle',function(e){var d=e.target;if(d&&d.dataset&&d.dataset.o)OPEN[d.dataset.o]=d.open},true);
 document.addEventListener('input',function(e){
  var k=e.target.dataset;if(k.k){var p=k.k.split('|');S.dr[S.day].ex[p[0]][+p[1]][+p[2]]=e.target.value;save()}
  else if(k.c){S.dr[S.day].c=e.target.value;save()}
