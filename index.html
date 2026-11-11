@@ -111,7 +111,33 @@ function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()
 var S={w:[{d:today(),v:START}],s:[],dr:{},m:[],sw:{},tab:'s',day:null};
 try{var r=localStorage.getItem(K);if(r){var o=JSON.parse(r);S.w=o.w||S.w;S.s=o.s||[];S.dr=o.dr||{};S.m=o.m||[];S.sw=o.sw||{}}}catch(e){}
 function snap(){return JSON.stringify({w:S.w,s:S.s,dr:S.dr,m:S.m,sw:S.sw})}
-function save(){try{localStorage.setItem(K,snap())}catch(e){}}
+function save(){try{localStorage.setItem(K,snap())}catch(e){}autoPush()}
+var GK='suivi-basic-fit-gh',GH={repo:'',path:'sauvegardes/suivi-basic-fit.json',tok:'',auto:false,last:''},ghT=null,ghMsg='',ghSkip=false;
+try{var g0=localStorage.getItem(GK);if(g0)GH=Object.assign(GH,JSON.parse(g0))}catch(e){}
+function ghSave(){try{localStorage.setItem(GK,JSON.stringify(GH))}catch(e){}}
+function ghUrl(){return 'https://api.github.com/repos/'+GH.repo.trim()+'/contents/'+GH.path.trim().split('/').map(encodeURIComponent).join('/')}
+function ghHead(){return {'Authorization':'Bearer '+GH.tok.trim(),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}}
+function ghOk(){return /^[\w.-]+\/[\w.-]+$/.test(GH.repo.trim())&&GH.path.trim()&&GH.tok.trim()}
+function ghErr(r){return r.status===401?'jeton refusé (401), vérifiez-le.':r.status===403?'accès refusé (403), droits du jeton insuffisants.':r.status===404?'dépôt ou fichier introuvable (404).':'erreur GitHub ('+r.status+').'}
+async function ghPush(){
+ if(!ghOk())throw new Error('renseignez le dépôt, le fichier et le jeton.');
+ var sha,r=await fetch(ghUrl(),{headers:ghHead()});
+ if(r.ok){sha=(await r.json()).sha}else if(r.status!==404)throw new Error(ghErr(r));
+ var body={message:'Sauvegarde '+today(),content:btoa(unescape(encodeURIComponent(snap())))};if(sha)body.sha=sha;
+ r=await fetch(ghUrl(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHead()),body:JSON.stringify(body)});
+ if(!r.ok)throw new Error(ghErr(r));
+ GH.last=new Date().toLocaleString('fr-FR');ghSave();
+}
+async function ghPull(){
+ if(!ghOk())throw new Error('renseignez le dépôt, le fichier et le jeton.');
+ var r=await fetch(ghUrl(),{headers:ghHead()});
+ if(!r.ok)throw new Error(ghErr(r));
+ var j=await r.json(),o=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,'')))));
+ if(!Array.isArray(o.w)||!Array.isArray(o.s))throw new Error('fichier de sauvegarde invalide.');
+ S.w=o.w;S.s=o.s;S.dr=o.dr||{};S.m=o.m||[];S.sw=o.sw||{};S.day=null;save();
+}
+function paintGh(){var e=document.getElementById('ghs');if(e)e.textContent=ghMsg}
+function autoPush(){if(!GH.auto||ghSkip||!ghOk())return;clearTimeout(ghT);ghT=setTimeout(function(){ghPush().then(function(){ghMsg='Synchronisé le '+GH.last;paintGh()}).catch(function(e){ghMsg='Échec de la synchronisation : '+e.message;paintGh()})},15000)}
 function fmt(n){return String(Math.round(n*10)/10).replace('.',',')}
 function num(v){var n=parseFloat(String(v).replace(',','.'));return isNaN(n)?null:n}
 function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
@@ -260,8 +286,19 @@ function vMes(){
  }
  return h;
 }
+function vGh(){
+ var e=esc;
+ return '<section class="card"><h3>Synchronisation GitHub</h3><p class="sub">Envoie la sauvegarde dans un fichier de votre dépôt GitHub. Choisissez un dépôt <b>privé</b> : vos poids et vos mesures sont des données personnelles.</p>'+
+ '<div class="fld" style="grid-template-columns:1fr"><div><label for="gh_repo">Dépôt (pseudo/nom)</label><input id="gh_repo" value="'+e(GH.repo)+'" placeholder="pseudo/suivi-basic-fit-data" autocapitalize="none" autocomplete="off"></div>'+
+ '<div><label for="gh_path">Fichier dans le dépôt</label><input id="gh_path" value="'+e(GH.path)+'" autocapitalize="none" autocomplete="off"></div>'+
+ '<div><label for="gh_tok">Jeton d’accès GitHub</label><input id="gh_tok" type="password" value="'+e(GH.tok)+'" placeholder="github_pat_…" autocomplete="off"></div></div>'+
+ '<label class="row" style="margin:6px 0"><input type="checkbox" id="gh_auto" style="width:auto"'+(GH.auto?' checked':'')+'> Envoyer automatiquement après chaque modification</label>'+
+ '<button class="btn alt" id="ghsave" style="margin:6px 0">Enregistrer les réglages</button><div class="row" style="margin:6px 0"><button class="btn" id="ghpush">Envoyer</button><button class="btn alt" id="ghpull">Récupérer</button></div>'+
+ '<p class="sub" id="ghs" role="status" style="font-size:14px">'+e(ghMsg||(GH.last?'Dernière synchronisation : '+GH.last:''))+'</p>'+
+ '<details class="tt"><summary>Comment obtenir le jeton ?</summary><div class="in"><ol><li>GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.</li><li>Repository access : <b>Only select repositories</b>, puis votre dépôt privé de sauvegarde.</li><li>Permissions → Repository permissions → <b>Contents : Read and write</b>.</li><li>Collez le jeton ici. Il reste sur ce téléphone et n’est jamais inclus dans la sauvegarde.</li></ol></div></details></section>';
+}
 function vBackup(){
- return '<section class="card"><h3>Sauvegarde</h3><p class="sub">Vos données restent sur ce téléphone. Envoyez-vous la sauvegarde (WhatsApp, e-mail, notes) pour ne rien perdre ou pour changer de téléphone.</p><div class="row" style="margin:10px 0"><button class="btn alt" id="bcopy">Copier</button>'+(navigator.share?'<button class="btn" id="bshare">Envoyer</button>':'')+'</div><textarea id="bdata" aria-label="Texte de sauvegarde" placeholder="Collez ici une sauvegarde à restaurer"></textarea><button class="btn alt" id="brest">Restaurer depuis ce texte</button><p class="sub" style="font-size:14px">La restauration remplace les données actuelles.</p></section>';
+ return '<section class="card"><h3>Sauvegarde</h3><p class="sub">Vos données restent sur ce téléphone. Envoyez-vous la sauvegarde (WhatsApp, e-mail, notes) pour ne rien perdre ou pour changer de téléphone.</p><div class="row" style="margin:10px 0"><button class="btn alt" id="bcopy">Copier</button>'+(navigator.share?'<button class="btn" id="bshare">Envoyer</button>':'')+'</div><textarea id="bdata" aria-label="Texte de sauvegarde" placeholder="Collez ici une sauvegarde à restaurer"></textarea><button class="btn alt" id="brest">Restaurer depuis ce texte</button><p class="sub" style="font-size:14px">La restauration remplace les données actuelles.</p></section>'+vGh();
 }
 function vProg(){
  return '<h1>Programme</h1><p class="sub">Débutant, 3 séances par semaine à Basic-Fit</p>'+
@@ -283,9 +320,11 @@ function stopT(){clearInterval(tm);document.getElementById('timer').classList.re
 document.getElementById('tx').onclick=stopT;
 
 document.addEventListener('click',function(e){
- var t=e.target.closest('[data-tab],[data-day],[data-chk],[data-del],[data-sw],[data-mdel],#fin,#wadd,#madd,#bcopy,#bshare,#brest');if(!t)return;
+ var t=e.target.closest('[data-tab],[data-day],[data-chk],[data-del],[data-sw],[data-mdel],#fin,#wadd,#madd,#bcopy,#bshare,#brest,#ghsave,#ghpush,#ghpull');if(!t)return;
  if(t.dataset.tab){S.tab=t.dataset.tab;render();window.scrollTo(0,0);return}
  if(t.dataset.day){S.day=t.dataset.day;render();return}
+ if(t.id==='ghsave'){GH.repo=document.getElementById('gh_repo').value.trim();GH.path=document.getElementById('gh_path').value.trim()||GH.path;GH.tok=document.getElementById('gh_tok').value.trim();GH.auto=document.getElementById('gh_auto').checked;ghSave();toast('Réglages enregistrés');return}
+ if(t.id==='ghpush'||t.id==='ghpull'){var pull=t.id==='ghpull';ghMsg='En cours…';paintGh();(pull?(ghSkip=true,ghPull()):ghPush()).then(function(){ghSkip=false;ghMsg=pull?'Données récupérées depuis GitHub.':'Envoyé le '+GH.last;if(pull)render();else paintGh();toast(pull?'Données récupérées':'Sauvegarde envoyée')}).catch(function(e){ghSkip=false;ghMsg='Échec : '+e.message;paintGh()});return}
  if(t.dataset.sw){var o2=t.dataset.sw,m2=(ALT[o2]||[]).length+1;S.sw[o2]=((S.sw[o2]||0)+1)%m2;save();render();return}
  if(t.dataset.mdel){S.m.splice(+t.dataset.mdel,1);save();render();return}
  if(t.id==='madd'){var en={d:today()},any=false;MF.forEach(function(f){var v=num(document.getElementById('m_'+f[0]).value);if(v&&v>5&&v<300){en[f[0]]=v;any=true}});if(!any){toast('Entrez au moins une mesure');return}var j=S.m.findIndex(function(x){return x.d===en.d});if(j>=0){S.m[j]=Object.assign(S.m[j],en)}else{S.m.push(en)}save();render();toast('Mesures enregistrées');return}
