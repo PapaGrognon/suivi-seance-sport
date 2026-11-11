@@ -75,6 +75,7 @@ details.tt summary:focus-visible{outline:3px solid var(--acc);outline-offset:2px
 details.tt[open] summary{border-bottom:1px solid var(--line)}
 .tt .in{padding:8px 12px 12px;font-size:15px}
 .tt ol{margin:6px 0;padding-left:20px}
+.pic svg{max-width:300px;margin:0 auto 8px}
 .tt .er{color:var(--mut);margin:6px 0 0}
 .tt .lk{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .tt .lk a{flex:1 1 140px;text-align:center;text-decoration:none;border-radius:10px;padding:10px;font-weight:600;background:var(--ink);color:var(--bg)}
@@ -144,10 +145,58 @@ mol:[['Épaules sous les coussins, pointes de pieds sur la plateforme.','Jambes 
 crunch:[['À genoux face à la poulie haute, corde tenue près de la tête.','Hanches fixes.','Enroulez le buste vers les genoux en expirant, remontez lentement.'],'tirer avec les bras au lieu des abdominaux.']
 };
 TUTO.presse2=TUTO.presse;TUTO.pl2=TUTO.pl;TUTO.tri2=TUTO.tri;
+var PIC={};
+(function(){
+var S0=[30,16,30,32,30,41,31,48],B0=[17,18,17,36,33,36,34,48],SE=[[11,38,36,38],[12,38,12,12]];
+function a(b,c){return b.concat(c)}
+PIC.presse={f:[[9,24,18,38,24,27,37,33,12,31,17,34],[9,24,18,38,28,31,41,25,12,31,17,34]],x:[[5,25,14,41],[14,41,22,41],[20,44,50,24]],d:'f'};
+PIC.ext={f:[a(B0,[20,29,27,36]),a([17,18,17,36,33,36,48,38],[20,29,27,36])],x:SE,d:'f'};
+PIC.curl={f:[PIC.ext.f[1],PIC.ext.f[0]],x:SE,d:'f'};
+PIC.pec={f:[a(B0,[14,25,24,21]),a(B0,[28,20,40,20])],x:SE};
+PIC.ep={f:[a(B0,[22,25,23,17]),a(B0,[23,10,23,2])],x:SE};
+PIC.tir={f:[a(B0,[22,10,25,2]),a(B0,[14,27,24,22])],x:SE};
+PIC.row={f:[a(B0,[27,25,38,25]),a(B0,[13,29,24,25])],x:[[11,38,36,38],[38,40,38,48]]};
+PIC.hip={f:[[10,31,22,44,33,33,36,46,14,37,21,41],[10,31,22,32,33,32,34,46,14,36,22,32]],x:[[3,35,15,35],[5,35,5,48]],d:'h'};
+PIC.bic={f:[a(S0,[31,25,32,34]),a(S0,[31,25,39,20])]};
+PIC.tri={f:[a(S0,[31,25,40,24]),a(S0,[31,25,33,34])]};
+PIC.lat={f:[a(S0,[31,25,32,34]),a(S0,[38,17,46,18])]};
+PIC.face={f:[a(S0,[38,17,46,17]),a(S0,[26,17,36,12])]};
+PIC.smith={f:[[30,16,30,32,30,41,30,48,26,19,30,15],[30,21,23,36,38,37,31,48,27,24,31,20]],d:'b'};
+PIC.rdl={f:[a(S0,[32,24,33,32]),[37,24,22,32,26,41,29,48,38,32,38,40]]};
+PIC.abd={f:[{h:[32,8],l:[[32,13,32,32],[24,16,40,16],[24,16,22,27],[40,16,42,27],[28,32,36,32],[30,32,29,42,29,48],[34,32,35,42,35,48]]},{h:[32,8],l:[[32,13,32,32],[24,16,40,16],[24,16,22,27],[40,16,42,27],[28,32,36,32],[30,32,20,40,16,48],[34,32,44,40,48,48]]}],d:'n'};
+PIC.mol={f:[a(S0,[31,25,32,34]),{h:[30,7],l:[[30,12,30,28],[30,12,31,21,32,30],[30,28,30,37,30,43],[30,43,35,48]]}],d:'n'};
+PIC.crunch={f:[[22,17,22,33,22,47,8,47,26,16,25,10],[33,33,22,33,22,47,8,47,33,39,30,33]]};
+PIC.pl={f:[[42,36,28,40,18,43,8,46,42,46,50,46]],d:'n'};
+[['presse2','presse'],['fly','pec'],['inc','pec'],['tirn','tir'],['tir2','row'],['tri2','tri'],['pl2','pl']].forEach(function(p){PIC[p[0]]=PIC[p[1]]});
+})();
+function picFrame(f,x,d){
+ var st='stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"';
+ var s='<line x1="0" y1="48.5" x2="64" y2="48.5" stroke="var(--line)"/>';
+ x.forEach(function(l){s+='<line x1="'+l[0]+'" y1="'+l[1]+'" x2="'+l[2]+'" y2="'+l[3]+'" stroke="var(--mut)" stroke-width="1.8" stroke-linecap="round"/>'});
+ var h,L,dot=null;
+ if(f.l){h=f.h;L=f.l}else{
+  var N=[f[0],f[1]],H=[f[2],f[3]],dx=N[0]-H[0],dy=N[1]-H[1],n=Math.sqrt(dx*dx+dy*dy)||1;
+  h=[N[0]+dx/n*5.5,N[1]+dy/n*5.5];
+  L=[[N[0],N[1],H[0],H[1]],[H[0],H[1],f[4],f[5],f[6],f[7]],[N[0],N[1],f[8],f[9],f[10],f[11]]];
+  dot=d==='f'?[f[6],f[7]]:d==='h'?H:d==='b'?N:d==='n'?null:[f[10],f[11]];
+ }
+ L.forEach(function(p){s+='<polyline points="'+p.join(' ')+'" '+st+'/>'});
+ s+='<circle cx="'+h[0]+'" cy="'+h[1]+'" r="4.2" '+st+'/>';
+ if(dot)s+='<circle cx="'+dot[0]+'" cy="'+dot[1]+'" r="3.3" fill="var(--acc)"/>';
+ return s;
+}
+function pic(k){
+ var D=PIC[k];if(!D)return '';
+ var F=D.f,s='<svg viewBox="0 0 '+(F.length>1?136:64)+' 62" role="img" aria-label="Schéma de l’exercice">';
+ F.forEach(function(f,i){s+='<g transform="translate('+(i*72)+',0)">'+picFrame(f,D.x||[],D.d||'w')+'<text x="32" y="59" text-anchor="middle" font-size="7" font-family="Barlow,sans-serif" fill="var(--mut)">'+(F.length>1?(i?'Fin':'Départ'):'Position tenue')+'</text></g>'});
+ return s+'</svg>';
+}
+
 function tuto(oid,nm,n){
  var T=n?null:TUTO[oid],k=oid+'~'+n;
  var q=encodeURIComponent(nm+' technique musculation'),g=encodeURIComponent(nm+' exercice musculation');
  var h='<details class="tt" data-o="'+k+'"'+(OPEN[k]?' open':'')+'><summary>Comment faire ?</summary><div class="in">';
+ if(!n&&PIC[oid])h+='<div class="pic">'+pic(oid)+'</div>';
  if(T)h+='<ol>'+T[0].map(function(s){return '<li>'+s+'</li>'}).join('')+'</ol><p class="er"><b>À éviter :</b> '+T[1]+'</p>';
  else h+='<p class="er">Mêmes principes que l’exercice d’origine : charge maîtrisée, mouvement lent, respiration régulière.</p>';
  return h+'<div class="lk"><a href="https://www.youtube.com/results?search_query='+q+'" target="_blank" rel="noopener">Voir des vidéos</a><a href="https://www.google.com/search?tbm=isch&amp;q='+g+'" target="_blank" rel="noopener">Voir des images</a></div></div></details>';
